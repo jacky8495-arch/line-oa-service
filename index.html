@@ -366,7 +366,7 @@
   @media (max-width: 680px) {
     body { overflow: hidden; }
     .slide {
-      padding: 44px 20px 88px;
+      padding: 44px 20px 130px;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
     }
@@ -415,9 +415,24 @@
     .final-analogy { padding: 14px 16px; margin-bottom: 18px; }
     .final-analogy p { font-size: 13px; line-height: 1.85; }
     .final-analogy p.highlight { font-size: 14px; }
-    .nav { bottom: 20px; gap: 20px; }
-    .nav-btn { width: 48px; height: 48px; font-size: 18px; }
-    .nav-counter { font-size: 13px; }
+    .nav {
+      bottom: calc(20px + env(safe-area-inset-bottom));
+      gap: 18px;
+    }
+    .nav-btn {
+      width: 48px;
+      height: 48px;
+      font-size: 18px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    }
+    .nav-counter {
+      font-size: 13px;
+      background: var(--white);
+      padding: 9px 14px;
+      border-radius: 100px;
+      border: 1px solid var(--cream-border);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    }
   }
 </style>
 </head>
