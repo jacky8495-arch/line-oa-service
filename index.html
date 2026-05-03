@@ -416,22 +416,38 @@
     .final-analogy p { font-size: 13px; line-height: 1.85; }
     .final-analogy p.highlight { font-size: 14px; }
     .nav {
-      bottom: calc(20px + env(safe-area-inset-bottom));
-      gap: 18px;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      transform: none;
+      width: 100%;
+      gap: 22px;
+      padding: 14px 0 calc(14px + env(safe-area-inset-bottom));
+      justify-content: center;
+      background: rgba(247, 244, 239, 0.92);
+      -webkit-backdrop-filter: saturate(180%) blur(10px);
+      backdrop-filter: saturate(180%) blur(10px);
+      border-top: 1px solid var(--cream-border);
     }
     .nav-btn {
-      width: 48px;
-      height: 48px;
+      width: 44px;
+      height: 44px;
       font-size: 18px;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
     }
     .nav-counter {
       font-size: 13px;
-      background: var(--white);
-      padding: 9px 14px;
-      border-radius: 100px;
-      border: 1px solid var(--cream-border);
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+      white-space: nowrap;
+      letter-spacing: 0.08em;
+    }
+    body.is-dark .nav {
+      background: rgba(28, 26, 23, 0.92);
+      border-top-color: rgba(255, 255, 255, 0.08);
+    }
+    body.is-dark .nav-counter { color: #c4b89a; }
+    body.is-dark .nav-btn {
+      background: #2a2724;
+      border-color: #3a3530;
+      color: #c4b89a;
     }
   }
 </style>
@@ -886,6 +902,7 @@
     slides[current].classList.add('active');
     document.getElementById('counter').textContent = (current + 1) + ' / ' + total;
     document.getElementById('progressBar').style.width = ((current + 1) / total * 100) + '%';
+    document.body.classList.toggle('is-dark', slides[current].classList.contains('final'));
   }
 
   function nextSlide() { goTo(current + 1); }
