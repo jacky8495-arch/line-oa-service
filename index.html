@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LINE 官方帳號建置服務｜提案</title>
+<style>
+  :root {
+    --cream: #f7f4ef;
+    --cream-dark: #ede8e0;
+    --cream-border: #ddd8ce;
+    --ink: #1c1a17;
+    --ink-mid: #4a4540;
+    --ink-light: #8a8278;
+    --brown: #5c4a32;
+    --brown-light: #8b7355;
+    --white: #fdfcf9;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--cream);
+    color: var(--ink);
+    font-family: -apple-system, "Helvetica Neue", "PingFang TC", "Noto Sans TC", sans-serif;
+    overflow: hidden;
+    height: 100vh;
+    touch-action: manipulation;
+  }
+
+  .slides { width: 100%; height: 100vh; position: relative; }
+  .slide {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 60px 80px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+  }
+  .slide.active { opacity: 1; pointer-events: all; }
+  .slide-inner { width: 100%; max-width: 860px; }
+
+  .slide .label, .slide h2 { text-align: center; }
+  .slide.cover .label, .slide.cover h1 { text-align: left; }
+  .slide.final .label, .slide.final h2 { text-align: left; }
+
+  .nav {
+    position: fixed;
+    bottom: 36px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    z-index: 100;
+  }
+  .nav-btn {
+    width: 40px; height: 40px;
+    border: 1px solid var(--cream-border);
+    background: var(--white);
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 16px;
+    color: var(--ink-mid);
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+  .nav-btn:hover { border-color: var(--brown-light); color: var(--brown); }
+  .nav-counter { font-size: 12px; color: var(--ink-light); letter-spacing: 0.1em; }
+
+  .progress {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--cream-border);
+    z-index: 100;
+  }
+  .progress-bar {
+    height: 100%;
+    background: var(--brown-light);
+    transition: width 0.4s ease;
+  }
+
+  .label {
+    font-size: 11px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--ink-light);
+    margin-bottom: 16px;
+  }
+  h1 { font-size: 48px; font-weight: 300; letter-spacing: 0.04em; line-height: 1.2; color: var(--ink); }
+  h2 { font-size: 32px; font-weight: 300; letter-spacing: 0.03em; color: var(--ink); margin-bottom: 32px; }
+  h3 { font-size: 16px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--brown); margin-bottom: 12px; }
+  p { font-size: 15px; line-height: 1.8; color: var(--ink-mid); }
+  .divider { width: 40px; height: 1px; background: var(--brown-light); margin: 24px 0; }
+
+  .cover { background: var(--white); text-align: left; }
+  .cover h1 { font-size: 52px; }
+  .cover-sub { font-size: 16px; color: var(--ink-light); margin-top: 12px; letter-spacing: 0.08em; }
+  .cover-info { margin-top: 48px; font-size: 13px; color: var(--ink-light); line-height: 2; letter-spacing: 0.04em; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; }
+  .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 20px; }
+
+  .card {
+    background: var(--white);
+    border: 1px solid var(--cream-border);
+    border-radius: 4px;
+    padding: 24px;
+  }
+  .card-label { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-light); margin-bottom: 8px; }
+  .card-value { font-size: 28px; font-weight: 300; color: var(--ink); margin-bottom: 6px; }
+  .card-desc { font-size: 13px; color: var(--ink-light); line-height: 1.6; }
+
+  .flow { display: flex; flex-direction: column; gap: 0; }
+  .flow-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--cream-border);
+  }
+  .flow-item:last-child { border-bottom: none; }
+  .flow-num {
+    width: 28px; height: 28px;
+    border: 1px solid var(--cream-border);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    color: var(--brown-light);
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .flow-text { font-size: 14px; color: var(--ink-mid); line-height: 1.7; }
+  .flow-text strong { color: var(--ink); font-weight: 600; }
+  .flow-text .sub { display:block; margin-top:6px; font-size:12px; color:var(--ink-light); line-height:1.7; }
+
+  .pitch-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .pitch-table th {
+    text-align: left;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ink-light);
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--cream-border);
+    font-weight: 600;
+  }
+  .pitch-table td {
+    padding: 13px 14px;
+    border-bottom: 1px solid var(--cream-dark);
+    color: var(--ink-mid);
+    vertical-align: middle;
+  }
+  .pitch-table tr:last-child td { border-bottom: none; }
+
+  .price-card {
+    background: var(--white);
+    border: 1px solid var(--cream-border);
+    border-radius: 4px;
+    padding: 28px 24px;
+  }
+  .price-card.featured { border-color: var(--brown-light); background: #faf7f2; }
+  .price-tier { font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-light); margin-bottom: 10px; }
+  .price-amount { font-size: 32px; font-weight: 300; color: var(--ink); margin-bottom: 4px; }
+  .price-unit { font-size: 12px; color: var(--ink-light); margin-bottom: 16px; }
+  .price-items { list-style: none; }
+  .price-items li { font-size: 12px; color: var(--ink-mid); padding: 5px 0; border-bottom: 1px solid var(--cream-dark); }
+  .price-items li:last-child { border-bottom: none; }
+
+  .single-price { max-width: 480px; margin: 0 auto; }
+
+  .pain-item { display: flex; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--cream-border); }
+  .pain-item:last-child { border-bottom: none; }
+  .pain-text { font-size: 14px; color: var(--ink-mid); line-height: 1.7; }
+  .pain-text strong { color: var(--ink); font-weight: 600; }
+
+  .oa-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .oa-item {
+    background: var(--white);
+    border: 1px solid var(--cream-border);
+    padding: 18px 20px;
+    border-radius: 4px;
+  }
+  .oa-func { font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
+  .oa-use { font-size: 12px; color: var(--ink-light); line-height: 1.6; }
+
+  .compare-chart {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) repeat(3, minmax(0, 1fr));
+    border: 1px solid var(--cream-border);
+    border-radius: 4px;
+    overflow: hidden;
+    background: var(--white);
+  }
+  .cc-cell {
+    padding: 14px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    color: var(--ink-mid);
+    border-bottom: 1px solid var(--cream-dark);
+    line-height: 1.4;
+  }
+  .cc-cell.cc-name {
+    justify-content: flex-start;
+    font-size: 13px;
+    color: var(--ink);
+    font-weight: 500;
+    padding-left: 16px;
+    text-align: left;
+  }
+  .cc-cell.cc-h {
+    background: var(--cream-dark);
+    font-size: 11px;
+    color: var(--ink-light);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .cc-cell.cc-highlight {
+    background: #faf7f2;
+    color: var(--ink);
+    font-weight: 600;
+  }
+  .cc-cell.cc-name.cc-highlight { font-weight: 700; }
+  .compare-chart > .cc-cell:nth-last-child(-n+4) { border-bottom: none; }
+
+  .dot {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .dot.full { background: var(--brown-light); }
+  .dot.partial {
+    background: linear-gradient(135deg, var(--brown-light) 50%, transparent 50%);
+    border: 1.5px solid var(--brown-light);
+    box-sizing: border-box;
+  }
+  .dot.empty {
+    background: transparent;
+    border: 1.5px solid var(--cream-border);
+    box-sizing: border-box;
+  }
+
+  .cc-legend {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 22px;
+    margin-top: 18px;
+    font-size: 12px;
+    color: var(--ink-light);
+  }
+  .cc-legend > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .advantage {
+    background: var(--white);
+    border: 1px solid var(--cream-border);
+    border-radius: 4px;
+    padding: 22px 20px;
+  }
+  .advantage-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--brown);
+    margin-bottom: 14px;
+    line-height: 1.5;
+    letter-spacing: 0.02em;
+  }
+  .advantage-list { list-style: none; padding: 0; }
+  .advantage-list li {
+    font-size: 13px;
+    color: var(--ink-mid);
+    line-height: 1.7;
+    padding: 5px 0 5px 14px;
+    position: relative;
+  }
+  .advantage-list li::before {
+    content: '·';
+    position: absolute;
+    left: 4px;
+    top: 4px;
+    color: var(--brown-light);
+    font-weight: 700;
+  }
+  .advantage-list li strong { color: var(--ink); font-weight: 600; }
+
+  .highlight-box {
+    border-left: 3px solid var(--brown-light);
+    padding: 14px 22px;
+    background: var(--white);
+    margin: 18px 0;
+    border-radius: 0 4px 4px 0;
+  }
+  .highlight-box p {
+    font-size: 14px;
+    color: var(--ink-mid);
+    line-height: 1.9;
+  }
+  .highlight-box strong { color: var(--ink); font-weight: 600; }
+
+  .faq-list { display: flex; flex-direction: column; gap: 14px; }
+  .faq-item {
+    background: var(--white);
+    border: 1px solid var(--cream-border);
+    border-radius: 4px;
+    padding: 20px 24px;
+  }
+  .faq-q {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 12px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    line-height: 1.5;
+  }
+  .faq-a {
+    font-size: 14px;
+    color: var(--ink-mid);
+    line-height: 1.85;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .qa-mark {
+    color: var(--brown);
+    font-weight: 600;
+    font-size: 13px;
+    flex-shrink: 0;
+    padding-top: 2px;
+    letter-spacing: 0.08em;
+    min-width: 14px;
+  }
+
+  .final { background: var(--ink); color: var(--cream); }
+  .final .label { color: #6b6560; }
+  .final h2 { color: var(--cream); }
+  .final .divider { background: var(--brown-light); }
+  .final p { color: #9a9188; }
+  .final .contact { font-size: 14px; color: #c4b89a; margin-top: 6px; letter-spacing: 0.05em; }
+  .final-analogy {
+    margin-bottom: 26px;
+    padding: 18px 22px;
+    border-left: 2px solid var(--brown-light);
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 0 4px 4px 0;
+  }
+  .final-analogy p { font-size: 14px; color: #b3a99c; line-height: 1.9; margin-bottom: 10px; }
+  .final-analogy p.highlight { color: #e8dcc4; font-size: 16px; font-weight: 500; margin-bottom: 0; margin-top: 12px; }
+
+  @media (max-width: 680px) {
+    body { overflow: hidden; }
+    .slide {
+      padding: 44px 20px 88px;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .slide > .slide-inner {
+      margin: auto 0;
+      flex-shrink: 0;
+    }
+    h1 { font-size: 32px; }
+    h2 { font-size: 20px; margin-bottom: 16px; }
+    .cover h1 { font-size: 34px; }
+    .cover-sub { font-size: 14px; }
+    .cover-info { margin-top: 28px; }
+    p { font-size: 13px; }
+    .label { margin-bottom: 10px; }
+    .grid-2 { grid-template-columns: 1fr; gap: 12px; }
+    .grid-3 { grid-template-columns: 1fr; gap: 12px; }
+    .grid-4 { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .oa-grid { grid-template-columns: 1fr; gap: 10px; }
+    .card { padding: 14px 16px; }
+    .card-value { font-size: 20px; }
+    .price-card { padding: 16px; }
+    .price-amount { font-size: 26px; }
+    .price-tier { margin-bottom: 6px; }
+    .compare-chart { grid-template-columns: minmax(0, 1.6fr) repeat(3, minmax(0, 1fr)); }
+    .cc-cell { padding: 10px 4px; font-size: 11px; }
+    .cc-cell.cc-name { font-size: 11px; padding-left: 10px; padding-right: 4px; line-height: 1.3; }
+    .cc-cell.cc-h { font-size: 9px; padding: 8px 2px; letter-spacing: 0.05em; }
+    .dot { width: 11px; height: 11px; }
+    .cc-legend { gap: 14px; font-size: 11px; }
+    .flow-item { padding: 11px 0; gap: 12px; }
+    .flow-text { font-size: 13px; }
+    .flow-text .sub { font-size: 11px; }
+    .oa-func { font-size: 12px; }
+    .oa-use { font-size: 11px; }
+    .oa-item { padding: 14px 16px; }
+    .pain-text { font-size: 13px; }
+    .faq-item { padding: 14px 16px; }
+    .faq-q { font-size: 14px; gap: 10px; margin-bottom: 8px; }
+    .faq-a { font-size: 13px; gap: 10px; }
+    .qa-mark { font-size: 12px; }
+    .advantage { padding: 14px 16px; }
+    .advantage-title { font-size: 13px; margin-bottom: 10px; }
+    .advantage-list li { font-size: 12px; padding: 4px 0 4px 12px; }
+    .highlight-box { padding: 12px 16px; }
+    .highlight-box p { font-size: 13px; line-height: 1.85; }
+    .final-analogy { padding: 14px 16px; margin-bottom: 18px; }
+    .final-analogy p { font-size: 13px; line-height: 1.85; }
+    .final-analogy p.highlight { font-size: 14px; }
+    .nav { bottom: 20px; gap: 20px; }
+    .nav-btn { width: 48px; height: 48px; font-size: 18px; }
+    .nav-counter { font-size: 13px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="progress"><div class="progress-bar" id="progressBar"></div></div>
+
+<div class="slides" id="slides">
+
+  <!-- Slide 1: Cover -->
+  <div class="slide cover active">
+    <div class="slide-inner">
+      <p class="label">提案簡報 · 2026</p>
+      <h1>LINE 官方帳號<br>建置與經營<br>服務</h1>
+      <p class="cover-sub">把每一位來過的客人，變成你長期的會員資產</p>
+      <div class="divider"></div>
+      <p class="cover-info">
+        謙謙影像<br>
+        jacky8495@gmail.com
+      </p>
+    </div>
+  </div>
+
+  <!-- Slide 2: 為什麼需要 LINE OA -->
+  <div class="slide">
+    <div class="slide-inner">
+      <p class="label">The Problem</p>
+      <h2>為什麼店家需要 LINE 官方帳號</h2>
+      <div class="grid-3" style="gap:18px;">
+        <div class="advantage">
+          <p class="advantage-title">不再被演算法綁架</p>
+          <ul class="advantage-list">
+            <li>IG / FB 貼文觸及率剩 <strong>5-10%</strong></li>
+            <li>LINE 推播觸及率接近 <strong>100%</strong></li>
+            <li>客人主動加入 = 名單品質高</li>
+          </ul>
+        </div>
+        <div class="advantage">
+          <p class="advantage-title">客戶名單真正屬於你</p>
+          <ul class="advantage-list">
+            <li>IG 帳號被檢舉就一夕歸零</li>
+            <li>LINE 名單可以帶著走</li>
+            <li>換店面、改品牌都不影響</li>
+          </ul>
+        </div>
+        <div class="advantage">
+          <p class="advantage-title">省下大量客服時間</p>
+          <ul class="advantage-list">
+            <li>常見問題自動回覆</li>
+            <li>半夜也能自動回覆客人疑問</li>
+            <li>店員多人協作後台</li>
+          </ul>
+        </div>
+      </div>
+      <div class="highlight-box" style="margin-top:24px;">
+        <p>大多數店家有 IG，卻沒有屬於自己的客戶名單。<strong>LINE 官方帳號是把社群流量轉成自有資產的關鍵一步。</strong></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 3: 行銷層面優點 -->
+  <div class="slide">
+    <div class="slide-inner">
+      <p class="label">Marketing Advantage</p>
+      <h2>行銷層面：精準、可量化、不浪費</h2>
+      <div class="grid-2" style="gap:18px;">
+        <div class="advantage">
+          <p class="advantage-title">主動推播，不靠運氣</p>
+          <ul class="advantage-list">
+            <li>新菜單、活動、優惠 <strong>直達手機通知</strong></li>
+            <li>觸及率比 IG 貼文高 10 倍以上</li>
+            <li>免廣告費觸達自有會員，零成本</li>
+          </ul>
+        </div>
+        <div class="advantage">
+          <p class="advantage-title">分眾投遞，不打擾錯的人</p>
+          <ul class="advantage-list">
+            <li>只推給「30 天內來過的熟客」</li>
+            <li>生日當月推生日優惠，提升回訪</li>
+            <li>避免無差別群發，省訊息費</li>
+          </ul>
+        </div>
+        <div class="advantage">
+          <p class="advantage-title">圖文選單 = 迷你官網</p>
+          <ul class="advantage-list">
+            <li>菜單、訂位、外送、地址全整合</li>
+            <li>沒有官網的店家也有「店面入口」</li>
+            <li>比 Linktree 整合度更高</li>
+          </ul>
+        </div>
+        <div class="advantage">
+          <p class="advantage-title">電子集點 / 優惠券</p>
+          <ul class="advantage-list">
+            <li>不用印實體紙卡，省成本</li>
+            <li>有效期、次數可控管</li>
+            <li>兌換率全程追蹤</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 4: 經營層面優點 -->
+  <div class="slide">
+    <div class="slide-inner">
+      <p class="label">Operations Advantage</p>
+      <h2>經營層面：省時、省人、看得到數字</h2>
+      <div class="flow">
+        <div class="flow-item">
+          <div class="flow-num">1</div>
+          <div class="flow-text"><strong>客戶名單變資產</strong> — 換店、加盟、賣品牌都帶得走，不會像 IG 帳號一夕歸零</div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-num">2</div>
+          <div class="flow-text"><strong>降低客服成本</strong> — 自動回覆處理 8 成常見問題，老闆睡覺不再被打擾</div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-num">3</div>
+          <div class="flow-text"><strong>整合訂位、點餐、外帶</strong> — 客人不用下載 App，全程在 LINE 內完成</div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-num">4</div>
+          <div class="flow-text"><strong>業績可視化</strong> — 訊息送出後幾人點擊、幾人到店，不再憑感覺做行銷</div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-num">5</div>
+          <div class="flow-text"><strong>員工溝通有 SOP</strong> — 罐頭訊息統一話術，新人接手不出錯</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 5: 可以做什麼 -->
+  <div class="slide">
+    <div class="slide-inner">
+      <p class="label">Core Functions</p>
+      <h2>LINE 官方帳號可以做這些事</h2>
+      <div class="oa-grid">
+        <div class="oa-item">
+          <p class="oa-func">自動回覆 / 關鍵字</p>
+          <p class="oa-use">客人傳「菜單」、「營業時間」、「地址」自動回覆，不漏接任何詢問</p>
+        </div>
+        <div class="oa-item">
+          <p class="oa-func">圖文選單</p>
+          <p class="oa-use">菜單、訂位、地圖、優惠一鍵直達，等於迷你官網</p>
+        </div>
+        <div class="oa-item">
+          <p class="oa-func">群發推播</p>
+          <p class="oa-use">新菜單、活動、檔期優惠，直接通知所有好友</p>
+        </div>
+        <div class="oa-item">
+          <p class="oa-func">分眾標籤推播</p>
+          <p class="oa-use">只推給熟客 / 流失客 / 生日當月客（搭配 CRM 工具）</p>
+        </div>
+        <div class="oa-item">
+          <p class="oa-func">電子集點卡</p>
+          <p class="oa-use">來店累點，省紙本成本，數據可追蹤</p>
+        </div>
+        <div class="oa-item">
+          <p class="oa-func">優惠券系統</p>
+          <p class="oa-use">淡季發券拉客，兌換率一眼看得到</p>
+        </div>
+        <div class="oa-item">
+          <p class="oa-func">點餐 / 訂位整合</p>
+          <p class="oa-use">串接 iCHEF / 出餐通 / inline，客人在 LINE 內完成</p>
+        </div>
+        <div class="oa-item">
+          <p class="oa-func">多人協作後台</p>
+          <p class="oa-use">店員輪班接訊息，員工權限分級管理</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 6: 服務內容 -->
+  <div class="slide">
+    <div class="slide-inner">
+      <p class="label">What's Included</p>
+      <h2>建置服務包含什麼</h2>
+      <div class="flow">
+        <div class="flow-item">
+          <div class="flow-num">1</div>
+          <div class="flow-text"><strong>帳號申請與基本設定</strong> — 從零開始或既有帳號優化，含商家認證、品牌資訊填寫</div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-num">2</div>
+          <div class="flow-text"><strong>圖文選單設計</strong> — 依品牌風格設計，整合菜單、訂位、優惠等入口</div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-num">3</div>
+          <div class="flow-text"><strong>自動回覆系統</strong> — 訪談店家常見問題，設計 5-10 組關鍵字流程</div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-num">4</div>
+          <div class="flow-text"><strong>歡迎訊息與加好友獎勵</strong> — 設計加入動機，讓每個客人都願意加好友</div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-num">5</div>
+          <div class="flow-text">
+            <strong>首發推播素材 5 組</strong> — 開幕 / 首發優惠、菜單導引、新品推播、活動推播、回訪喚回
+            <span class="sub">每組含主視覺圖 + 文案 + CTA 按鈕，店家收到後可直接群發或排入未來檔期</span>
+          </div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-num">6</div>
+          <div class="flow-text">
+            <strong>串接點餐系統</strong> — 整合店家既有的 iCHEF / 出餐通 / Menutaiwan 等系統
+            <span class="sub">把點餐流程嵌進 LINE 圖文選單，客人從 LINE 點按鈕直接進入點餐畫面，不用另外下載 App</span>
+          </div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-num">7</div>
+          <div class="flow-text">
+            <strong>店家教學交接</strong> — 1-2 小時面對面或視訊教學
+            <span class="sub">教學內容：發訊操作、菜單修改、後台數據查看、客服訊息回覆。提供 SOP 操作手冊 PDF + 1 個月內 LINE 私訊問答支援</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 7: 點餐系統整合（原 Slide 8） -->
+  <div class="slide">
+    <div class="slide-inner">
+      <p class="label">POS Integration</p>
+      <h2>點餐系統整合：以店家既有系統為主</h2>
+      <p style="font-size:14px;color:var(--ink-mid);line-height:1.85;margin-bottom:20px;text-align:center;">
+        評估店家現有的點餐系統，把點餐流程整合進 LINE 圖文選單。<br>
+        客人從 LINE 點按鈕，直接進入點餐畫面，不用另外下載 App。
+      </p>
+      <div class="grid-2" style="gap:20px;">
+        <div class="card">
+          <p class="card-label">基礎</p>
+          <p class="card-value" style="font-size:18px;font-weight:500;">點餐連結整合</p>
+          <p class="card-desc" style="margin-top:10px;">把點餐網址整合進圖文選單按鈕。客人點一下跳轉直接點餐。<strong style="color:var(--ink);">任何點餐系統皆可</strong>。</p>
+        </div>
+        <div class="card">
+          <p class="card-label">進階</p>
+          <p class="card-value" style="font-size:18px;font-weight:500;">LIFF 內嵌點餐</p>
+          <p class="card-desc" style="margin-top:10px;">客人不離開 LINE 就完成點餐、可自動帶入 LINE 身分、訂單狀態推回對話框，體驗最順。</p>
+        </div>
+      </div>
+
+      <div style="margin-top:24px;padding:16px 20px;background:var(--white);border:1px solid var(--cream-border);border-radius:4px;">
+        <p style="font-size:11px;color:var(--ink-light);margin-bottom:10px;letter-spacing:0.12em;font-weight:600;text-transform:uppercase;">已驗證可深度整合的點餐 / 訂位系統</p>
+        <p style="font-size:13px;color:var(--ink-mid);line-height:1.85;">
+          iCHEF · 快一點 QuickClick · Ocard 線上點 · 你訂 Nidin · inline（訂位）· 12CM 集客 · 料理人 BeeSmart · 微碧 Weiby
+        </p>
+        <p style="font-size:11px;color:var(--ink-light);margin-top:10px;line-height:1.7;">使用其他系統可協助評估。若系統不支援 LIFF，將以連結整合 + 訂單追蹤替代，總價不變。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 8: 競品分析（原 Slide 10，去掉店內物料） -->
+  <div class="slide">
+    <div class="slide-inner">
+      <p class="label">Competitive Analysis</p>
+      <h2>與其他方案的差異</h2>
+      <div class="compare-chart">
+        <div class="cc-cell cc-h cc-name"></div>
+        <div class="cc-cell cc-h">基礎建置</div>
+        <div class="cc-cell cc-h">視覺素材</div>
+        <div class="cc-cell cc-h">行銷策略</div>
+
+        <div class="cc-cell cc-name cc-highlight">謙謙影像（本方案）</div>
+        <div class="cc-cell cc-highlight"><span class="dot full"></span></div>
+        <div class="cc-cell cc-highlight"><span class="dot full"></span></div>
+        <div class="cc-cell cc-highlight"><span class="dot full"></span></div>
+
+        <div class="cc-cell cc-name">LINE OA 代管公司</div>
+        <div class="cc-cell"><span class="dot full"></span></div>
+        <div class="cc-cell"><span class="dot empty"></span></div>
+        <div class="cc-cell"><span class="dot partial"></span></div>
+
+        <div class="cc-cell cc-name">設計工作室</div>
+        <div class="cc-cell"><span class="dot partial"></span></div>
+        <div class="cc-cell"><span class="dot full"></span></div>
+        <div class="cc-cell"><span class="dot empty"></span></div>
+
+        <div class="cc-cell cc-name">店家自己摸</div>
+        <div class="cc-cell"><span class="dot partial"></span></div>
+        <div class="cc-cell"><span class="dot empty"></span></div>
+        <div class="cc-cell"><span class="dot empty"></span></div>
+
+        <div class="cc-cell cc-name">CRM 軟體商</div>
+        <div class="cc-cell"><span class="dot full"></span></div>
+        <div class="cc-cell"><span class="dot empty"></span></div>
+        <div class="cc-cell"><span class="dot partial"></span></div>
+      </div>
+
+      <div class="cc-legend">
+        <span><span class="dot full"></span>完整提供</span>
+        <span><span class="dot partial"></span>部分提供</span>
+        <span><span class="dot empty"></span>未提供</span>
+      </div>
+
+      <p style="font-size:12px;color:var(--ink-light);margin-top:18px;text-align:center;">攝影師背景 + LINE OA 設定能力 + 行銷規劃，把整套客戶體驗一次做完。</p>
+    </div>
+  </div>
+
+  <!-- Slide 9: FAQ -->
+  <div class="slide">
+    <div class="slide-inner">
+      <p class="label">FAQ</p>
+      <h2>你可能在想的問題</h2>
+      <div class="faq-list">
+        <div class="faq-item">
+          <div class="faq-q"><span class="qa-mark">Q.</span>建置完之後我自己會操作嗎？</div>
+          <div class="faq-a"><span class="qa-mark">A.</span>會。交接時會做 1-2 小時的後台教學，並提供 SOP 文件，後續一個月內任何問題 LINE 私訊我都會回。常見的發訊、改菜單、看數據都不需要技術背景。</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q"><span class="qa-mark">Q.</span>LINE OA 訊息費誰付？</div>
+          <div class="faq-a"><span class="qa-mark">A.</span>店家自己付，月費 NT$ 800 起（200 則訊息內），由店家直接綁定信用卡給 LINE。我只收建置與服務費，避免代墊與帳務糾紛。</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q"><span class="qa-mark">Q.</span>我已經有 LINE 帳號了還能做嗎？</div>
+          <div class="faq-a"><span class="qa-mark">A.</span>可以。把我加成管理員，我會診斷現有帳號的設定缺漏並逐步優化。已有帳號的方案會比從零開始略低。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 10: 建置方案（兩個方案） -->
+  <div class="slide">
+    <div class="slide-inner">
+      <p class="label">Pricing</p>
+      <h2>建置方案</h2>
+      <p style="font-size:13px;color:var(--ink-light);margin-bottom:24px;text-align:center;">一次性建置費，依店家規模與需求選擇</p>
+      <div class="grid-2" style="gap:20px;">
+        <div class="price-card">
+          <p class="price-tier">初階版</p>
+          <p class="price-amount">13,000</p>
+          <p class="price-unit">NT$ 起 / 一次性</p>
+          <ul class="price-items">
+            <li>帳號申請與基本設定</li>
+            <li>圖文選單設計（1 版）</li>
+            <li>自動回覆關鍵字 5 組</li>
+            <li>歡迎訊息設計</li>
+            <li>首發推播素材 2 組</li>
+            <li>點餐連結整合（任何系統皆可）</li>
+            <li>QR Code 桌邊立牌設計</li>
+            <li>1 小時教學交接</li>
+            <li>1 個月諮詢期</li>
+          </ul>
+        </div>
+        <div class="price-card featured">
+          <p class="price-tier" style="color:var(--brown);">進階版</p>
+          <p class="price-amount">22,000</p>
+          <p class="price-unit">NT$ 起 / 一次性</p>
+          <ul class="price-items">
+            <li>帳號申請與基本設定</li>
+            <li>圖文選單設計（1 版）</li>
+            <li>自動回覆關鍵字 5-10 組</li>
+            <li>歡迎訊息與加好友獎勵設計</li>
+            <li>首發推播素材 5 組（文案 + 視覺）</li>
+            <li>點餐系統深度整合（LIFF / API）</li>
+            <li>QR Code 桌邊立牌設計</li>
+            <li>1-2 小時教學交接 + SOP 操作手冊</li>
+            <li>1 個月諮詢 + 第 2、3 月各 1 次月度回顧</li>
+          </ul>
+        </div>
+      </div>
+      <div style="margin-top:24px;padding:16px 20px;background:var(--white);border:1px solid var(--cream-border);border-radius:4px;">
+        <p style="font-size:11px;color:var(--ink-light);margin-bottom:10px;letter-spacing:0.12em;font-weight:600;text-transform:uppercase;">LINE 平台月費（由店家直接向 LINE 支付）</p>
+        <p style="font-size:12px;color:var(--ink-mid);line-height:1.85;">
+          · 輕用量方案：<strong style="color:var(--ink);">免費</strong> ／ 每月 200 則訊息額度<br>
+          · 中用量方案：<strong style="color:var(--ink);">NT$ 800 / 月</strong> ／ 每月 3,000 則訊息額度<br>
+          · 高用量方案：<strong style="color:var(--ink);">NT$ 1,800 / 月</strong> ／ 每月 6,000 則訊息額度
+        </p>
+        <p style="font-size:11px;color:var(--ink-light);margin-top:10px;">超過額度部分依加價訊息費用計算，方案內容以 LINE 官方公告為準</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 11: 選配方案 -->
+  <div class="slide">
+    <div class="slide-inner">
+      <p class="label">Add-on Services</p>
+      <h2>選配方案</h2>
+      <p style="font-size:13px;color:var(--ink-light);margin-bottom:24px;text-align:center;">建置完成後可依需求加購</p>
+      <div class="grid-2" style="gap:20px;">
+        <div class="price-card">
+          <p class="price-tier">月費代操</p>
+          <p class="price-amount">12,000</p>
+          <p class="price-unit">NT$ / 月</p>
+          <ul class="price-items">
+            <li>每月推播 4 則（文案 + 視覺設計）</li>
+            <li>月度後台數據報告</li>
+            <li>半年度行銷活動排程規劃</li>
+            <li>自動回覆內容季度優化</li>
+            <li>節慶 / 檔期推播策略提案</li>
+            <li>LINE 私訊問題即時諮詢</li>
+          </ul>
+        </div>
+        <div class="price-card">
+          <p class="price-tier">MENU 拍攝</p>
+          <p class="price-amount">12,000</p>
+          <p class="price-unit">NT$ / 4 小時</p>
+          <ul class="price-items">
+            <li>4 小時可拍攝約 12-15 道餐點</li>
+            <li>含基礎修圖後製</li>
+            <li>適用菜單視覺、推播素材</li>
+            <li>商業使用授權</li>
+            <li>檔案雲端交付</li>
+          </ul>
+        </div>
+      </div>
+      <p style="font-size:12px;color:var(--ink-light);margin-top:20px;text-align:center;">月費代操合約最少 3 個月，簽約折扣 5-10%</p>
+    </div>
+  </div>
+
+  <!-- Slide 12: 結尾 -->
+  <div class="slide final">
+    <div class="slide-inner" style="text-align:left;">
+      <p class="label">Next Step</p>
+      <h2>準備好開始了嗎</h2>
+      <div class="divider"></div>
+      <div class="final-analogy">
+        <p>IG 粉絲是 Meta 的，FB 粉絲是 Meta 的，
+連你最愛的常客換手機沒追蹤你都不知道。</p>
+        <p class="highlight">而 LINE 好友——是真正屬於你的客戶。</p>
+      </div>
+      <p style="font-size:15px;color:#9a9188;line-height:1.8;margin-bottom:32px;">
+        從建置到內容、從客人加好友到 30 天後的回訪召回，<br>
+        我幫你把 LINE 官方帳號做成<br>
+        一台會自動長大的會員引擎。
+      </p>
+      <p class="contact">謙謙影像</p>
+      <p class="contact">jacky8495@gmail.com</p>
+      <p class="contact">Instagram · @chien_sanyo</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- Navigation -->
+<div class="nav">
+  <button class="nav-btn" onclick="prevSlide()">←</button>
+  <span class="nav-counter" id="counter">1 / 12</span>
+  <button class="nav-btn" onclick="nextSlide()">→</button>
+</div>
+
+<script>
+  var slides = document.querySelectorAll('.slide');
+  var total  = slides.length;
+  var current = 0;
+
+  function goTo(n) {
+    slides[current].classList.remove('active');
+    current = (n + total) % total;
+    slides[current].classList.add('active');
+    document.getElementById('counter').textContent = (current + 1) + ' / ' + total;
+    document.getElementById('progressBar').style.width = ((current + 1) / total * 100) + '%';
+  }
+
+  function nextSlide() { goTo(current + 1); }
+  function prevSlide() { goTo(current - 1); }
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowRight' || e.key === ' ') nextSlide();
+    if (e.key === 'ArrowLeft') prevSlide();
+  });
+
+  var txStart = 0, tyStart = 0;
+  document.addEventListener('touchstart', function(e) {
+    txStart = e.touches[0].clientX;
+    tyStart = e.touches[0].clientY;
+  }, { passive: true });
+  document.addEventListener('touchend', function(e) {
+    var dx = e.changedTouches[0].clientX - txStart;
+    var dy = e.changedTouches[0].clientY - tyStart;
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 48) {
+      if (dx < 0) nextSlide(); else prevSlide();
+    }
+  }, { passive: true });
+
+  document.getElementById('counter').textContent = '1 / ' + total;
+  document.getElementById('progressBar').style.width = (1 / total * 100) + '%';
+</script>
+
+</body>
+</html>
